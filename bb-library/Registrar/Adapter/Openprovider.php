@@ -115,20 +115,20 @@ class Registrar_Adapter_Openprovider extends Registrar_AdapterAbstract
     }
     public function modifyNs(Registrar_Domain $domain)
     {
-        $ns = array();
-        $ns[] = array('name' => $domain->getNs1(), 'ip' => gethostbyname($domain->getNs1()));
-        $ns[] = array('name' => $domain->getNs2(), 'ip' => gethostbyname($domain->getNs2()));
+        $nameServers = array();
+        $nameServers[] = array('name' => $domain->getNs1(), 'ip' => gethostbyname($domain->getNs1()));
+        $nameServers[] = array('name' => $domain->getNs2(), 'ip' => gethostbyname($domain->getNs2()));
         if($domain->getNs3())  {
-            $ns[] = array('name' => $domain->getNs3(), 'ip' => gethostbyname($domain->getNs3()));
+            $nameServers[] = array('name' => $domain->getNs3(), 'ip' => gethostbyname($domain->getNs3()));
         }
         if($domain->getNs4())  {
-            $ns[] = array('name' => $domain->getNs4(), 'ip' => gethostbyname($domain->getNs4()));
+            $nameServers[] = array('name' => $domain->getNs4(), 'ip' => gethostbyname($domain->getNs4()));
         }
-        $ns = array();
+        $nameServers = array();
 
         $args = array(
             'domain' => array('name' => $domain->getSld(), 'extension' => ltrim($domain->getTld(), '.')),
-            'nameServers' => $ns
+            'nameServers' => $nameServers
             );
         $reply = $this->_makeRequest('modifyDomainRequest', $args);
 
@@ -175,6 +175,18 @@ class Registrar_Adapter_Openprovider extends Registrar_AdapterAbstract
     public function transferDomain(Registrar_Domain $domain)
     {
         $userHandle = $this->_createCustomer($domain);
+
+        $nameServers = array();
+        $nameServers[] = array('name' => $domain->getNs1(), 'ip' => gethostbyname($domain->getNs1()));
+        $nameServers[] = array('name' => $domain->getNs2(), 'ip' => gethostbyname($domain->getNs2()));
+        if($domain->getNs3())  {
+            $nameServers[] = array('name' => $domain->getNs3(), 'ip' => gethostbyname($domain->getNs3()));
+        }
+        if($domain->getNs4())  {
+            $nameServers[] = array('name' => $domain->getNs4(), 'ip' => gethostbyname($domain->getNs4()));
+        }
+        $nameServers = array();
+
         $args = array(
             'domain' => array('name' => $domain->getSld(), 'extension' => ltrim($domain->getTld(), '.')),
             'period' => $domain->getRegistrationPeriod(),
@@ -184,8 +196,9 @@ class Registrar_Adapter_Openprovider extends Registrar_AdapterAbstract
             'techHandle' => $userHandle,
             'billingHandle' => $userHandle,
             'nsGroup' => $this->_getNsGroup(),
-            'nameServers' => $ns
-            );
+            'nameServers' => $nameServers
+        );
+        $reply = $this->_makeRequest('transferDomainRequest', $args);
         if (isset($reply['error'])) {
             throw new Registrar_Exception($reply['msg']);
         } elseif ($reply['status'] == 'ACT') {
@@ -194,11 +207,11 @@ class Registrar_Adapter_Openprovider extends Registrar_AdapterAbstract
             return false;
         }
     }
-    private function _retrieveDomain(Registrar_Domain $d)
+    private function _retrieveDomain(Registrar_Domain $domain)
     {
         $args = array(
-            'domain' => array('name' => $d->getSld(), 'extension' => ltrim($d->getTld(), '.'))
-            );
+            'domain' => array('name' => $domain->getSld(), 'extension' => ltrim($domain->getTld(), '.'))
+        );
         $reply = $this->_makeRequest('retrieveDomainRequest', $args);
         if (isset($reply['error'])) {
             throw new Registrar_Exception($reply['msg']);
@@ -210,7 +223,7 @@ class Registrar_Adapter_Openprovider extends Registrar_AdapterAbstract
     {
         $args = array(
             'domain' => array('name' => $domain->getSld(), 'extension' => ltrim($domain->getTld(), '.'))
-            );
+        );
         $reply = $this->_makeRequest('retrieveDomainRequest', $args);
         $domain->setRegistrationTime(strtotime($reply['creationDate']));
         $domain->setExpirationTime(strtotime($reply['renewalDate']));
@@ -229,8 +242,6 @@ class Registrar_Adapter_Openprovider extends Registrar_AdapterAbstract
         if(isset($reply['nameServers'][0])) {
             $domain->setNs4($reply['nameServers'][0]['name']);
         }
-
-
         $owner = $this->_getHandleInfo($reply['ownerHandle']);
         $tel = $owner['phone']['areaCode'].$owner['phone']['subscriberNumber'];
         $telcc = $owner['phone']['countryCode'];
@@ -285,18 +296,16 @@ class Registrar_Adapter_Openprovider extends Registrar_AdapterAbstract
     {
         $userHandle = $this->_createCustomer($domain);
 
-        $ns = array();
-        $ns[] = array('name' => $domain->getNs1(), 'ip' => gethostbyname($domain->getNs1()));
-        $ns[] = array('name' => $domain->getNs2(), 'ip' => gethostbyname($domain->getNs2()));
+        $nameServers = array();
+        $nameServers[] = array('name' => $domain->getNs1(), 'ip' => gethostbyname($domain->getNs1()));
+        $nameServers[] = array('name' => $domain->getNs2(), 'ip' => gethostbyname($domain->getNs2()));
         if($domain->getNs3())  {
-            $ns[] = array('name' => $domain->getNs3(), 'ip' => gethostbyname($domain->getNs3()));
+            $nameServers[] = array('name' => $domain->getNs3(), 'ip' => gethostbyname($domain->getNs3()));
         }
         if($domain->getNs4())  {
-            $ns[] = array('name' => $domain->getNs4(), 'ip' => gethostbyname($domain->getNs4()));
+            $nameServers[] = array('name' => $domain->getNs4(), 'ip' => gethostbyname($domain->getNs4()));
         }
-        $ns = array();
-        // $ns[] = array('name' => 'ns1.openprovider.nl', 'ip' => '93.180.69.5');
-        // $ns[] = array('name' => 'ns2.openprovider.be', 'ip' => '144.76.197.172');
+        $nameServers = array();
 
         $args = array(
             'domain' => array('name' => $domain->getSld(), 'extension' => ltrim($domain->getTld(), '.')),
@@ -306,7 +315,7 @@ class Registrar_Adapter_Openprovider extends Registrar_AdapterAbstract
             'techHandle' => $userHandle,
             'billingHandle' => $userHandle,
             'nsGroup' => $this->_getNsGroup(),
-            'nameServers' => $ns
+            'nameServers' => $nameServers
             );
         $reply = $this->_makeRequest('createDomainRequest', $args);
 
@@ -398,39 +407,38 @@ class Registrar_Adapter_Openprovider extends Registrar_AdapterAbstract
             return true;
         }
     }
-    private function _createCustomer(Registrar_Domain $d)
+    private function _createCustomer(Registrar_Domain $domain)
     {
         //checking if user already exists
-        $existAccount = $this->_checkIfAcountExists($d);
+        $existAccount = $this->_checkIfAcountExists($domain);
         if ($existAccount) {
             // l'usuari ja existeix
             return $existAccount;
         } else {       
             // es crea l'suuari nou
-            $c = $d->getContactRegistrar();
+            $contact = $domain->getContactRegistrar();
             $args = array(
                 'name' => array(
-                    'initials' => substr($c->getFirstName(), 0, 1).'.'.substr($c->getLastName(), 0, 1).'.',
-                    'firstName' => $c->getFirstName(),
-                    'lastName' => $c->getLastName(),
+                    'initials' => substr($contact->getFirstName(), 0, 1).'.'.substr($contact->getLastName(), 0, 1).'.',
+                    'firstName' => $contact->getFirstName(),
+                    'lastName' => $contact->getLastName(),
                 ),
                 'gender' => 'M', 
                 'address' => array(
-                    'street' => $c->getAddress1(),
+                    'street' => $contact->getAddress1(),
                     'number' => '0',
-                    'zipcode' => $c->getZip(),
-                    'city' => $c->getCity(),
-                    'state' => $c->getState(),
-                    'country' => $c->getCountry(),
+                    'zipcode' => $contact->getZip(),
+                    'city' => $contact->getCity(),
+                    'state' => $contact->getState(),
+                    'country' => $contact->getCountry(),
                 ),
                 'phone' => array(
-                    'countryCode' => '+'.$c->getTelCc(),
-                    'areaCode' => substr($c->getTel(), 0, 2),
-                    'subscriberNumber' => substr($c->getTel(), 2)
+                    'countryCode' => '+'.$contact->getTelCc(),
+                    'areaCode' => substr($contact->getTel(), 0, 2),
+                    'subscriberNumber' => substr($contact->getTel(), 2)
                 ),
-                'email' => $c->getEmail(),
+                'email' => $contact->getEmail(),
             );
-            var_dump($args);
             $reply = $this->_makeRequest('createCustomerRequest', $args);
 
             if (isset($reply['error'])) {
@@ -442,12 +450,12 @@ class Registrar_Adapter_Openprovider extends Registrar_AdapterAbstract
             }
         }
     }
-    private function _checkIfAcountExists(Registrar_Domain $d)
+    private function _checkIfAcountExists(Registrar_Domain $domain)
     {
-        $c = $d->getContactRegistrar();
+        $contact = $domain->getContactRegistrar();
 
         $args = array(
-            'emailPattern' => $c->getEmail()
+            'emailPattern' => $contact->getEmail()
             );
         $reply = $this->_makeRequest('searchCustomerRequest', $args);
         if (isset($reply['error'])) {
